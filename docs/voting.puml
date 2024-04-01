@@ -1,0 +1,35 @@
+@startuml
+
+== Голосование ==
+
+actor part as "Участник"
+
+participant tg as "Telegram"
+
+box "QuickMeet" #LightBlue
+    participant service as "Обработчик сообщений"
+    database db as "БД"
+end box
+
+tg -> part: "Вам предложена встреча, выберите время"
+
+part -> tg: "Выбранное время"
+tg -> service: "Участник проголосовал"
+service -> db: "Получить состояние встречи"
+db --> service: "Данные встречи"
+
+alt "Голосование активно"
+service -> db: "Обновить голоса"
+db --> service: "Обновление выполнено"
+
+service --> service: Триггер проверки окончания голосования
+
+service --> tg: "Ваш голос учтён"
+tg --> part: "Ваш голос учтён"
+else "Голосование окончено"
+service --> tg: "Голосование окончено"
+tg --> part: "Голосование окончено"
+end
+
+
+@enduml
