@@ -1,5 +1,7 @@
 package ru.imo.quickmeet.service.impl;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import ru.imo.quickmeet.dto.Participant;
 import ru.imo.quickmeet.dto.TimeSlot;
 import ru.imo.quickmeet.service.MeetingTimeCalculator;
@@ -16,9 +18,11 @@ import java.util.Optional;
  * @author sibmaks
  * @since 0.0.1
  */
+@Service
 public class SimpleMeetingTimeCalculator implements MeetingTimeCalculator {
     private final TimeSlotMerger timeSlotMerger;
 
+    @Autowired
     public SimpleMeetingTimeCalculator(TimeSlotMerger timeSlotMerger) {
         this.timeSlotMerger = timeSlotMerger;
     }

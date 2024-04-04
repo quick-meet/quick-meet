@@ -1,5 +1,6 @@
 package ru.imo.quickmeet.service.impl;
 
+import org.springframework.stereotype.Service;
 import ru.imo.quickmeet.dto.TimeSlot;
 import ru.imo.quickmeet.service.TimeSlotMerger;
 
@@ -12,6 +13,8 @@ import java.util.List;
  * @author sibmaks
  * @since 0.0.1
  */
+
+@Service
 public class SimpleTimeSlotMerger implements TimeSlotMerger {
     @Override
     public List<TimeSlot> merge(List<TimeSlot> slots) {
