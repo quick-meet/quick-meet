@@ -40,9 +40,6 @@ public class MeetController {
     @CrossOrigin
     @PostMapping("bot-start")
     public ResponseEntity<String> startBot(@RequestBody UserRegisterDTO user) {
-        //TODO
-        // go to User service and save new user
-        //
         User u = new User();
         u.setUserId(user.user_id());
         u.setUserName(user.username());
