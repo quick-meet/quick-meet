@@ -4,7 +4,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/quick-meet
     username: postgres
-    password: postgres
+    password: user
     driver-class-name: org.postgresql.Driver
   jpa:
     database: postgresql
@@ -12,6 +12,9 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
+        format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
         globally_quoted_identifiers: true
     show-sql: true
+
+

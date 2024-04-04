@@ -10,7 +10,7 @@ import java.util.Set;
 
 public interface UnavailableTimeSlotsRepository extends JpaRepository<UnavailableTimeSlot, Long> {
     List<UnavailableTimeSlot> findAllByUserInAndEndAtAfterAndStartAtBefore(
-            Set<User> users,
+            List<User> users,
             LocalDateTime startAt,
             LocalDateTime endAt
     );

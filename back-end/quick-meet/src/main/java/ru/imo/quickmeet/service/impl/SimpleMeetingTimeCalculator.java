@@ -31,6 +31,11 @@ public class SimpleMeetingTimeCalculator implements MeetingTimeCalculator {
             LocalDateTime leftBound,
             LocalDateTime rightBound,
             List<UnavailableTimeSlot> unavailableTimeSlots) {
+
+        if (unavailableTimeSlots.isEmpty()) {
+            return Optional.of(new TimeSlot(leftBound, leftBound.plusMinutes(meetingTimeMinutes)));
+        }
+
         var timeSlots = timeSlotMerger.merge(
                 unavailableTimeSlots.stream()
                         .map(it -> new TimeSlot(it.getStartAt(), it.getEndAt()))

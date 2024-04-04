@@ -96,12 +96,23 @@ public class MeetController {
 
         var timeStart = timeSlot.getStartAt().toEpochSecond(ZoneOffset.UTC);
 
-        var userNames = users.stream()
+        List<String> userNames = users.stream()
                 .map(User::getUserName)
                 .toList();
         List<String> userIds = users.stream()
                 .map(User::getUserId)
                 .toList();
+
+        for (String tgUserName : userNames) {
+            User u = userRepository.findByUserName(tgUserName);
+            UnavailableTimeSlot slot = new UnavailableTimeSlot();
+
+            slot.setUser(u);
+            slot.setStartAt(timeSlot.getStartAt());
+            LocalDateTime endTime = timeSlot.getStartAt().plusMinutes(duration);
+            slot.setEndAt(endTime);
+            unavailableTimeSlotsRepository.saveAndFlush(slot);
+        }
 
         String resultTime = timeSlot.getStartAt().format(formatter);
         return new CreatedMeetDTO(meeting.getId(), userNames, userIds, resultTime, duration, "");
