@@ -12,10 +12,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.imo.quickmeet.database.entity.Meeting;
+import ru.imo.quickmeet.database.entity.UnavailableTimeSlot;
 import ru.imo.quickmeet.database.entity.User;
 import ru.imo.quickmeet.database.repository.MeetingRepository;
 import ru.imo.quickmeet.database.repository.UnavailableTimeSlotsRepository;
 import ru.imo.quickmeet.database.repository.UserRepository;
+import ru.imo.quickmeet.dto.BusyTimeDTO;
 import ru.imo.quickmeet.dto.CreatedMeetDTO;
 import ru.imo.quickmeet.dto.MeetsDTO;
 import ru.imo.quickmeet.dto.NewMeetDTO;
@@ -103,11 +105,16 @@ public class MeetController {
     }
 
     @CrossOrigin
-    @PostMapping("user/{tgUserId}")
-    public ResponseEntity<String> setBusyTime(@PathVariable String tgUserId, RequestEntity<String> request) {
-        //TODO
-        // add busy time to data base
-        //
+    @PostMapping("user/{tgUserName}")
+    public ResponseEntity<String> setBusyTime(@PathVariable String tgUserName,
+                                              @RequestBody BusyTimeDTO busyTime) {
+        User u = userRepository.findByUserName(tgUserName);
+        UnavailableTimeSlot slot = new UnavailableTimeSlot();
+
+        slot.setUser(u);
+        slot.setStartAt(busyTime.start_time());
+        slot.setEndAt(busyTime.end_time());
+        unavailableTimeSlotsRepository.saveAndFlush(slot);
         return ResponseEntity.ok().build();
     }
 }
