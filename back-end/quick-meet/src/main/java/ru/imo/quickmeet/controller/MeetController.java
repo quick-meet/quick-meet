@@ -15,7 +15,9 @@ import ru.imo.quickmeet.service.MeetingTimeCalculator;
 import ru.imo.quickmeet.service.impl.SimpleMeetingTimeCalculator;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,6 +30,7 @@ public class MeetController {
     private final MeetingRepository meetingRepository;
     private final UnavailableTimeSlotsRepository unavailableTimeSlotsRepository;
     private final UserRepository userRepository;
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     @Autowired
     public MeetController(SimpleMeetingTimeCalculator calculator, MeetingRepository meetingRepository, UnavailableTimeSlotsRepository unavailableTimeSlotsRepository, UserRepository userRepository) {
@@ -55,13 +58,16 @@ public class MeetController {
 
     @CrossOrigin
     @PostMapping("meet")
-    public ReturnedMeetDTO createMeet(@RequestBody NewMeetDTO meet) {
-        var leftBound = Instant.ofEpochMilli(meet.time_start())
-                .atZone(ZoneOffset.UTC)
-                .toLocalDateTime();
-        var rightBound = Instant.ofEpochMilli(meet.time_start())
-                .atZone(ZoneOffset.UTC)
-                .toLocalDateTime();
+    public CreatedMeetDTO createMeet(@RequestBody NewMeetDTO meet) {
+//        var leftBound = Instant.ofEpochMilli(meet.time_start())
+//                .atZone(ZoneOffset.UTC)
+//                .toLocalDateTime();
+//        var rightBound = Instant.ofEpochMilli(meet.time_start())
+//                .atZone(ZoneOffset.UTC)
+//                .toLocalDateTime();
+
+        LocalDateTime leftBound = LocalDateTime.parse(meet.time_start(), formatter);
+        LocalDateTime rightBound = LocalDateTime.parse(meet.time_end(), formatter);
 
         var users = userRepository.findAllByUserNameIn(meet.users());
 
@@ -74,7 +80,8 @@ public class MeetController {
         var duration = meet.duration();
         var timeSlotOptional = timeCalculator.calculate(duration, leftBound, rightBound, unavailableTimeSlots);
         if(timeSlotOptional.isEmpty()) {
-            return new ReturnedMeetDTO(-1, Collections.emptyList(), 0, 0, "Слот не найден");
+            return new CreatedMeetDTO(-1, Collections.emptyList(),
+                    Collections.emptyList(), "1970-01-01 12:00", 0, "Слот не найден");
         }
         var timeSlot = timeSlotOptional.get();
 
@@ -92,7 +99,12 @@ public class MeetController {
         var userNames = users.stream()
                 .map(User::getUserName)
                 .toList();
-        return new ReturnedMeetDTO(meeting.getId(), userNames, timeStart, duration, null);
+        List<String> userIds = users.stream()
+                .map(User::getUserId)
+                .toList();
+
+        String resultTime = timeSlot.getStartAt().format(formatter);
+        return new CreatedMeetDTO(meeting.getId(), userNames, userIds, resultTime, duration, "");
     }
 
     @CrossOrigin
@@ -113,8 +125,10 @@ public class MeetController {
                 users_ids.add(u.getUserId());
             }
 
+            String resultTime = m.getTimeStart().format(formatter);
+
             CreatedMeetDTO createdM = new CreatedMeetDTO(m.getId(),
-                    users_nicks, users_ids, m.getTimeStart(), m.getDurationInMinutes(), "");
+                    users_nicks, users_ids, resultTime, m.getDurationInMinutes(), "");
 
             meetDTOS.add(createdM);
         }
@@ -126,12 +140,17 @@ public class MeetController {
     @PostMapping("user/{tgUserName}")
     public ResponseEntity<String> setBusyTime(@PathVariable String tgUserName,
                                               @RequestBody BusyTimeDTO busyTime) {
+
+
+        LocalDateTime startTime = LocalDateTime.parse(busyTime.start_time(), formatter);
+        LocalDateTime endTime = LocalDateTime.parse(busyTime.end_time(), formatter);
+
         User u = userRepository.findByUserName(tgUserName);
         UnavailableTimeSlot slot = new UnavailableTimeSlot();
 
         slot.setUser(u);
-        slot.setStartAt(busyTime.start_time());
-        slot.setEndAt(busyTime.end_time());
+        slot.setStartAt(startTime);
+        slot.setEndAt(endTime);
         unavailableTimeSlotsRepository.saveAndFlush(slot);
         return ResponseEntity.ok().build();
         //return new BusyTimeDTO(LocalDateTime.now(), LocalDateTime.now());

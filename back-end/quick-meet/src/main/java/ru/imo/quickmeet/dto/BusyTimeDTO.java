@@ -2,5 +2,5 @@ package ru.imo.quickmeet.dto;
 
 import java.time.LocalDateTime;
 
-public record BusyTimeDTO(LocalDateTime start_time, LocalDateTime end_time) {
+public record BusyTimeDTO(String start_time, String end_time) {
 }
