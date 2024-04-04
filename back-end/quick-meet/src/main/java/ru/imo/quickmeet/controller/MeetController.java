@@ -3,30 +3,20 @@ package ru.imo.quickmeet.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.imo.quickmeet.database.entity.Meeting;
 import ru.imo.quickmeet.database.entity.UnavailableTimeSlot;
 import ru.imo.quickmeet.database.entity.User;
 import ru.imo.quickmeet.database.repository.MeetingRepository;
 import ru.imo.quickmeet.database.repository.UnavailableTimeSlotsRepository;
 import ru.imo.quickmeet.database.repository.UserRepository;
-import ru.imo.quickmeet.dto.BusyTimeDTO;
-import ru.imo.quickmeet.dto.CreatedMeetDTO;
-import ru.imo.quickmeet.dto.MeetsDTO;
-import ru.imo.quickmeet.dto.NewMeetDTO;
-import ru.imo.quickmeet.dto.ReturnedMeetDTO;
-import ru.imo.quickmeet.dto.UserRegisterDTO;
+import ru.imo.quickmeet.dto.*;
 import ru.imo.quickmeet.service.MeetingTimeCalculator;
 import ru.imo.quickmeet.service.impl.SimpleMeetingTimeCalculator;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -69,11 +59,43 @@ public class MeetController {
     @CrossOrigin
     @PostMapping("meet")
     public ReturnedMeetDTO createMeet(@RequestBody NewMeetDTO meet) {
-        //TODO
-        // go to User service and save new user
-        //
-        return new ReturnedMeetDTO(0, List.of("@1", "@2", "@123"),
-                1000, 2, "template meet");
+        var leftBound = Instant.ofEpochMilli(meet.time_start())
+                .atZone(ZoneOffset.UTC)
+                .toLocalDateTime();
+        var rightBound = Instant.ofEpochMilli(meet.time_start())
+                .atZone(ZoneOffset.UTC)
+                .toLocalDateTime();
+
+        var users = userRepository.findAllByUserNameIn(meet.users());
+
+        var unavailableTimeSlots = unavailableTimeSlotsRepository.findAllByUserInAndEndAtAfterAndStartAtBefore(
+                users,
+                leftBound,
+                rightBound
+        );
+
+        var duration = meet.duration();
+        var timeSlotOptional = timeCalculator.calculate(duration, leftBound, rightBound, unavailableTimeSlots);
+        if(timeSlotOptional.isEmpty()) {
+            return new ReturnedMeetDTO(-1, Collections.emptyList(), 0, 0, "Слот не найден");
+        }
+        var timeSlot = timeSlotOptional.get();
+
+        var meeting = Meeting.builder()
+                .timeStart(timeSlot.getStartAt())
+                .timeEnd(timeSlot.getEndAt())
+                .durationInMinutes(duration)
+                .users(users)
+                .build();
+
+        meeting = meetingRepository.save(meeting);
+
+        var timeStart = timeSlot.getStartAt().toEpochSecond(ZoneOffset.UTC);
+
+        var userNames = users.stream()
+                .map(User::getUserName)
+                .toList();
+        return new ReturnedMeetDTO(meeting.getId(), userNames, timeStart, duration, null);
     }
 
     @CrossOrigin
