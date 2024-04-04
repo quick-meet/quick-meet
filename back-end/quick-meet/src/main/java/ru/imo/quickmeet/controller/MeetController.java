@@ -57,9 +57,8 @@ public class MeetController {
         u.setUserId(user.user_id());
         u.setUserName(user.username());
 
-        User existed = userRepository.getReferenceById(user.user_id());
 
-        if (existed == null) {
+        if (!userRepository.findById(user.user_id()).isPresent()) {
             userRepository.saveAndFlush(u);
         }
 
@@ -116,5 +115,6 @@ public class MeetController {
         slot.setEndAt(busyTime.end_time());
         unavailableTimeSlotsRepository.saveAndFlush(slot);
         return ResponseEntity.ok().build();
+        //return new BusyTimeDTO(LocalDateTime.now(), LocalDateTime.now());
     }
 }
