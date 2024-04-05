@@ -119,10 +119,16 @@ async def query_message(message: types.Message, state: FSMContext):
         response = requests.post(f"{BASE_URL}/meet", json=body)
         if response.ok is True:
             response_dict = json.loads(response.text)
-            await message.answer("Встреча успешно создалась."
+
+            for user_id_to_send in response_dict['users_ids']:
+                if int(user_id_to_send) != message.from_user.id:
+                    await bot.send_message(chat_id=user_id_to_send, text=f"Вас пригласили на встречу \nВремя начала встречи: {response_dict['time_start']} \nПродолжительность встречи: {response_dict['duration']} минут \nПриглашенные пользователи: {response_dict['users_nicks']}")
+
+            logins = ["@" + login for login in response_dict['users_nicks']]
+            await message.answer("Встреча успешно создалась, все приглашенные пользователи уведомлены"
                                  f"\nВремя начала встречи: {response_dict['time_start']}"
                                  f"\nПродолжительность встречи: {response_dict['duration']} минут"
-                                 f"\nПриглашенные пользователи: {response_dict['users_nicks']}")
+                                 f"\nПриглашенные пользователи: {logins}")
         else:
             await message.answer(f"Не удалось создать встречу")
     elif data[BOT_STATE] == BotStates.AWAITING_BUSY_START_TIME:
